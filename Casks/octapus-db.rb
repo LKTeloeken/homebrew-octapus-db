@@ -14,8 +14,12 @@ cask "octapus-db" do
   # tentaria reinstalar por cima e brigaria com o auto-update.
   auto_updates true
 
+  # O regex padrão do github_latest (/v?(\d+(?:\.\d+)+)/i) não dá conta do
+  # formato de tag daqui: ignora o prefixo "app-" e corta o sufixo "-beta.N",
+  # reportando 0.1.0 em vez de 0.1.0-beta.5. Daí o regex explícito.
   livecheck do
     url :url
+    regex(/^app[._-]v?(\d+(?:\.\d+)+(?:-[a-z]+(?:\.\d+)?)?)$/i)
     strategy :github_latest
   end
 
