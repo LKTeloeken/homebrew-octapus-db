@@ -23,6 +23,11 @@ cask "octapus-db" do
     strategy :github_latest
   end
 
+  # Nota: o app é assinado ad-hoc, sem notarização, então o Gatekeeper o barra
+  # enquanto ele carregar o atributo com.apple.quarantine — que o Homebrew aplica
+  # por padrão. A remoção NÃO é feita aqui de propósito: um `postflight` com
+  # `xattr -dr` desligaria uma verificação de segurança do sistema sem o usuário
+  # pedir. Quem instala passa `--no-quarantine` conscientemente (ver README).
   app "octapus-db.app"
 
   zap trash: [

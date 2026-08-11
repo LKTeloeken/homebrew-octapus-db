@@ -7,28 +7,49 @@ de banco de dados desktop para PostgreSQL, MongoDB e Redis.
 
 ```bash
 brew tap LKTeloeken/octapus-db
-brew install --cask octapus-db
 ```
 
-Ou em um comando só:
-
 ```bash
-brew install --cask LKTeloeken/octapus-db/octapus-db
+brew install --cask --no-quarantine octapus-db
 ```
 
 Funciona em Apple Silicon (`aarch64`) e Intel (`x64`) — o Homebrew escolhe o binário
 certo automaticamente.
 
-## Por que instalar pelo Homebrew
+### Por que o `--no-quarantine`
 
-O octapus-db é assinado ad-hoc, sem certificado da Apple e sem notarização. Quem baixa
-o `.dmg` pelo navegador esbarra no aviso do Gatekeeper ("A Apple não pôde verificar se
-o item está livre de malware") e precisa liberar o app manualmente em **Ajustes do
-Sistema → Privacidade e Segurança → Abrir Mesmo Assim**.
+O octapus-db é assinado ad-hoc, **sem certificado da Apple e sem notarização**. Todo
+arquivo que o macOS considera "baixado da internet" recebe o atributo
+`com.apple.quarantine`, e o Gatekeeper barra apps não notarizados que o carregam, com
+o aviso *"A Apple não pôde verificar se o item está livre de malware"*.
 
-O `brew install --cask` remove o atributo de quarentena durante a instalação, então por
-este canal **o app abre direto, sem aviso nenhum**. É por isso que o Homebrew é o
-caminho recomendado no macOS enquanto não houver certificado pago.
+O Homebrew **também** aplica esse atributo nas casks que instala. A flag
+`--no-quarantine` diz a ele para não aplicar — e sem o atributo, o app abre direto, sem
+aviso nenhum.
+
+Se você instalar **sem** a flag, o app instala normalmente mas o Gatekeeper vai barrar
+na primeira abertura. Nesse caso, ou libere manualmente em **Ajustes do Sistema →
+Privacidade e Segurança → Abrir Mesmo Assim**, ou remova o atributo você mesmo:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/octapus-db.app
+```
+
+A cask **não** remove a quarentena por conta própria (não usa `postflight` para isso):
+desligar uma verificação de segurança do sistema é decisão de quem instala, não de
+quem empacota. Por isso a flag é explícita.
+
+> Quando o app tiver certificado pago e notarização, o `--no-quarantine` deixa de ser
+> necessário e esta seção sai do README.
+
+### Se aparecer "untrusted tap"
+
+A partir do Homebrew 6.0, taps de terceiros exigem confiança explícita. Se você vir
+`Refusing to load cask ... from untrusted tap`, autorize com:
+
+```bash
+brew trust --cask LKTeloeken/octapus-db/octapus-db
+```
 
 ## Atualizações
 
@@ -63,3 +84,7 @@ A cask é atualizada automaticamente pelo workflow
 [`bump-cask.yml`](.github/workflows/bump-cask.yml), que a cada 6 horas consulta a
 última release de `LKTeloeken/octapus_db`, recalcula os `sha256` dos DMGs e commita a
 nova versão. Também dá para rodar sob demanda via `workflow_dispatch`.
+
+O `livecheck` da cask usa um regex explícito, porque o padrão do `github_latest` não
+entende o formato de tag daqui (`app-v0.1.0-beta.5`): ele ignoraria o prefixo `app-` e
+cortaria o sufixo `-beta.N`, reportando `0.1.0`.
