@@ -10,36 +10,39 @@ brew tap LKTeloeken/octapus-db
 ```
 
 ```bash
-brew install --cask --no-quarantine octapus-db
+brew install --cask octapus-db
+```
+
+E então, **antes da primeira abertura**, libere o app do Gatekeeper:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/octapus-db.app
 ```
 
 Funciona em Apple Silicon (`aarch64`) e Intel (`x64`) — o Homebrew escolhe o binário
 certo automaticamente.
 
-### Por que o `--no-quarantine`
+### Por que esse segundo comando
 
 O octapus-db é assinado ad-hoc, **sem certificado da Apple e sem notarização**. Todo
 arquivo que o macOS considera "baixado da internet" recebe o atributo
 `com.apple.quarantine`, e o Gatekeeper barra apps não notarizados que o carregam, com
 o aviso *"A Apple não pôde verificar se o item está livre de malware"*.
 
-O Homebrew **também** aplica esse atributo nas casks que instala. A flag
-`--no-quarantine` diz a ele para não aplicar — e sem o atributo, o app abre direto, sem
-aviso nenhum.
+O Homebrew **também** aplica esse atributo nas casks que instala — a partir do
+Homebrew 6.0 não há mais como pedir que ele não aplique (a antiga flag
+`--no-quarantine` foi removida, e não existe variável de ambiente equivalente). Por
+isso a remoção é um passo separado, feito por você depois da instalação.
 
-Se você instalar **sem** a flag, o app instala normalmente mas o Gatekeeper vai barrar
-na primeira abertura. Nesse caso, ou libere manualmente em **Ajustes do Sistema →
-Privacidade e Segurança → Abrir Mesmo Assim**, ou remova o atributo você mesmo:
-
-```bash
-xattr -dr com.apple.quarantine /Applications/octapus-db.app
-```
+Se preferir não rodar o `xattr`, dá para liberar pela interface na primeira abertura:
+o macOS mostra o aviso, e você autoriza em **Ajustes do Sistema → Privacidade e
+Segurança → Abrir Mesmo Assim**. O efeito é o mesmo.
 
 A cask **não** remove a quarentena por conta própria (não usa `postflight` para isso):
 desligar uma verificação de segurança do sistema é decisão de quem instala, não de
-quem empacota. Por isso a flag é explícita.
+quem empacota. Por isso o passo é explícito.
 
-> Quando o app tiver certificado pago e notarização, o `--no-quarantine` deixa de ser
+> Quando o app tiver certificado pago e notarização, esse passo deixa de ser
 > necessário e esta seção sai do README.
 
 ### Se aparecer "untrusted tap"
@@ -69,10 +72,10 @@ brew uninstall --cask octapus-db
 Para remover também os dados locais (banco de conexões, cache e chave do cofre):
 
 ```bash
-brew zap --cask octapus-db
+brew uninstall --cask --zap octapus-db
 ```
 
-O `zap` apaga:
+O `--zap` manda para o lixo:
 
 - `~/Library/Application Support/com.octapus-db.app` (inclui `app.db` e `vault.key`)
 - `~/Library/Caches/com.octapus-db.app`

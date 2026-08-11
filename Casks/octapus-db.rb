@@ -27,7 +27,8 @@ cask "octapus-db" do
   # enquanto ele carregar o atributo com.apple.quarantine — que o Homebrew aplica
   # por padrão. A remoção NÃO é feita aqui de propósito: um `postflight` com
   # `xattr -dr` desligaria uma verificação de segurança do sistema sem o usuário
-  # pedir. Quem instala passa `--no-quarantine` conscientemente (ver README).
+  # pedir. Quem instala roda o `xattr` conscientemente (ver README). A flag
+  # `--no-quarantine` do brew não é alternativa: foi removida no Homebrew 6.0.
   app "octapus-db.app"
 
   zap trash: [
