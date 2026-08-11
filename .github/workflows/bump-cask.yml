@@ -1,0 +1,111 @@
+name: bump-cask
+
+on:
+  schedule:
+    # A cada 6 horas.
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bump-cask
+  cancel-in-progress: false
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Descobrir a última release do app
+        id: latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          tag="$(gh api repos/LKTeloeken/octapus_db/releases/latest --jq '.tag_name')"
+          echo "tag=$tag"
+
+          # A tag tem o formato app-v<versão>, ex.: app-v0.1.0-beta.5
+          case "$tag" in
+            app-v*) ;;
+            *) echo "::error::Tag inesperada: '$tag' (esperado prefixo 'app-v')"; exit 1 ;;
+          esac
+          new_version="${tag#app-v}"
+
+          current_version="$(sed -n 's/^  version "\(.*\)"$/\1/p' Casks/octapus-db.rb)"
+          if [ -z "$current_version" ]; then
+            echo "::error::Não consegui ler a version atual de Casks/octapus-db.rb"
+            exit 1
+          fi
+
+          echo "atual=$current_version  nova=$new_version"
+          echo "new_version=$new_version" >> "$GITHUB_OUTPUT"
+
+          if [ "$new_version" = "$current_version" ]; then
+            echo "Cask já está em $current_version — nada a fazer."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Baixar os DMGs e calcular os sha256
+        id: shas
+        if: steps.latest.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          v="${{ steps.latest.outputs.new_version }}"
+          base="https://github.com/LKTeloeken/octapus_db/releases/download/app-v${v}"
+
+          for a in aarch64 x64; do
+            url="${base}/octapus-db_${v}_${a}.dmg"
+            echo "Baixando $url"
+            curl -fsSL --retry 3 --retry-delay 5 -o "octapus-${a}.dmg" "$url"
+            sum="$(sha256sum "octapus-${a}.dmg" | cut -d' ' -f1)"
+            echo "${a}: ${sum}"
+            echo "${a}=${sum}" >> "$GITHUB_OUTPUT"
+          done
+
+          rm -f octapus-*.dmg
+
+      - name: Atualizar a cask
+        if: steps.latest.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          v="${{ steps.latest.outputs.new_version }}"
+          arm_sha="${{ steps.shas.outputs.aarch64 }}"
+          intel_sha="${{ steps.shas.outputs.x64 }}"
+
+          sed -i \
+            -e "s|^  version \".*\"$|  version \"${v}\"|" \
+            -e "s|^  sha256 arm:   \".*\",$|  sha256 arm:   \"${arm_sha}\",|" \
+            -e "s|^         intel: \".*\"$|         intel: \"${intel_sha}\"|" \
+            Casks/octapus-db.rb
+
+          echo "--- cask depois do bump ---"
+          cat Casks/octapus-db.rb
+
+          # Sanidade: os três valores têm que estar realmente no arquivo.
+          grep -q "version \"${v}\"" Casks/octapus-db.rb
+          grep -q "${arm_sha}" Casks/octapus-db.rb
+          grep -q "${intel_sha}" Casks/octapus-db.rb
+
+      - name: Commitar e dar push
+        if: steps.latest.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- Casks/octapus-db.rb; then
+            echo "Nenhuma mudança efetiva no arquivo — nada a commitar."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Casks/octapus-db.rb
+          git commit -m "octapus-db ${{ steps.latest.outputs.new_version }}"
+          git push

@@ -1,0 +1,29 @@
+cask "octapus-db" do
+  arch arm: "aarch64", intel: "x64"
+
+  version "0.1.0-beta.5"
+  sha256 arm:   "9c00e7b351ed3fa9ff19e482164fb37830b918f838333d34400b092f568a1508",
+         intel: "4ff4a8f9d5000062b9e68c7886cae5b64702d9f367a809678684d77d5fbfdc54"
+
+  url "https://github.com/LKTeloeken/octapus_db/releases/download/app-v#{version}/octapus-db_#{version}_#{arch}.dmg"
+  name "octapus-db"
+  desc "Cliente de banco de dados desktop para PostgreSQL, MongoDB e Redis"
+  homepage "https://github.com/LKTeloeken/octapus_db"
+
+  # O app se atualiza sozinho pelo updater do Tauri. Sem isto, o Homebrew
+  # tentaria reinstalar por cima e brigaria com o auto-update.
+  auto_updates true
+
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
+  app "octapus-db.app"
+
+  zap trash: [
+    "~/Library/Application Support/com.octapus-db.app",
+    "~/Library/Caches/com.octapus-db.app",
+    "~/Library/WebKit/com.octapus-db.app",
+  ]
+end
