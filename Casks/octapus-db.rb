@@ -1,9 +1,9 @@
 cask "octapus-db" do
   arch arm: "aarch64", intel: "x64"
 
-  version "0.1.0-beta.7"
-  sha256 arm:   "ad6e4c30d67fbb64f40d9cb1724e231ee56449d6c6370bc6ed41ad4460251772",
-         intel: "7e5c2c6c384f3bdf3600f9ca845c2c830a61ba8cbafe018e4fc3f7819854b061"
+  version "0.1.0-beta.8"
+  sha256 arm:   "2598b0095dadb64ed11c0144de31c26921f2a9fe8edccf73648aa47b4b7989e9",
+         intel: "5d82e4df05fa0e056d51b8ab0ab85b4f9b4091bd5bebd18f8bb42a60d0916a8b"
 
   url "https://github.com/LKTeloeken/octapus_db/releases/download/app-v#{version}/octapus-db_#{version}_#{arch}.dmg"
   name "octapus-db"
