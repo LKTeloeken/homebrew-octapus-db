@@ -1,9 +1,8 @@
 name: bump-cask
 
+# Só manual (Actions → bump-cask → Run workflow, ou `gh workflow run bump-cask`).
+# O agendamento a cada 6 horas foi removido para não gastar minutos do Actions.
 on:
-  schedule:
-    # A cada 6 horas.
-    - cron: "0 */6 * * *"
   workflow_dispatch:
 
 permissions:
